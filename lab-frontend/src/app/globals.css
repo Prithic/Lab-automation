@@ -2,6 +2,17 @@
 @tailwind components;
 @tailwind utilities;
 
+@layer base {
+  body {
+    @apply bg-[#0f172a] text-slate-200 antialiased overflow-x-hidden;
+    background-image: 
+      radial-gradient(at 0% 0%, rgba(30, 27, 75, 0.5) 0px, transparent 50%),
+      radial-gradient(at 100% 0%, rgba(15, 23, 42, 0.5) 0px, transparent 50%),
+      radial-gradient(at 100% 100%, rgba(30, 27, 75, 0.5) 0px, transparent 50%),
+      radial-gradient(at 0% 100%, rgba(15, 23, 42, 0.5) 0px, transparent 50%);
+  }
+}
+
 @layer utilities {
   .scrollbar-hide::-webkit-scrollbar {
     display: none;
@@ -10,12 +21,20 @@
     -ms-overflow-style: none;
     scrollbar-width: none;
   }
+  
+  .glass-card {
+    @apply bg-white/5 backdrop-blur-xl border border-white/10 shadow-2xl transition-all duration-500 hover:bg-white/10;
+  }
 }
 
-body {
-  margin: 0;
-  padding: 0;
-  background: linear-gradient(135deg, #2b3b4c 0%, #1a242f 100%);
-  color: white;
-  min-height: 100vh;
+@keyframes gradient-shift {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+.animated-bg {
+  background: linear-gradient(-45deg, #0f172a, #1e1b4b, #0f172a, #1e1b4b);
+  background-size: 400% 400%;
+  animation: gradient-shift 15s ease infinite;
 }

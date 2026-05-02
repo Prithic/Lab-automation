@@ -2,6 +2,17 @@
 
 import React, { useState, useEffect } from 'react';
 import mqtt from 'mqtt';
+import { 
+  Shield, 
+  Scan, 
+  Activity, 
+  Thermometer, 
+  Lightbulb, 
+  Cpu, 
+  Settings, 
+  UserCheck,
+  AlertCircle
+} from 'lucide-react';
 
 interface CameraState {
   camera_zone: string;
@@ -14,12 +25,13 @@ const Dashboard = () => {
     camera_zone: "Workstation",
     face_detected: false
   });
+  const [relayState, setRelayState] = useState(false);
+  const [temp, setTemp] = useState(24.5);
 
   useEffect(() => {
     const client = mqtt.connect('ws://localhost:9001');
 
     client.on('connect', () => {
-      console.log('Connected to MQTT via WebSockets');
       client.subscribe('lab/security/camera');
     });
 
@@ -27,79 +39,146 @@ const Dashboard = () => {
       if (topic === 'lab/security/camera') {
         const data = JSON.parse(message.toString());
         setCameraState(data);
-        
-        // Reset state after 10 seconds if no further detection
-        setTimeout(() => {
-          setCameraState(prev => ({ ...prev, face_detected: false }));
-        }, 10000);
       }
     });
 
-    return () => {
-      client.end();
-    };
+    return () => client.end();
   }, []);
 
   return (
-    <div className="min-h-screen p-8 md:p-12 scrollbar-hide">
-      <header className="mb-12">
-        <h1 className="text-4xl md:text-5xl font-bold text-white tracking-tight">
-          Lab Dashboard
-        </h1>
-        <p className="text-gray-400 mt-4 text-lg">Real-time monitoring and security overview.</p>
+    <div className="min-h-screen p-6 md:p-10 animated-bg scrollbar-hide">
+      <header className="mb-10 flex justify-between items-end">
+        <div>
+          <h1 className="text-5xl font-black text-white tracking-tighter uppercase">
+            Smart Lab <span className="text-blue-500">Core</span>
+          </h1>
+          <p className="text-slate-400 mt-2 font-medium tracking-wide">Autonomous Infrastructure Dashboard</p>
+        </div>
+        <div className="hidden md:flex gap-4">
+          <div className="glass-card rounded-2xl px-6 py-3 flex items-center gap-3">
+            <div className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse"></div>
+            <span className="text-sm font-bold tracking-widest text-slate-300">SYSTEM ONLINE</span>
+          </div>
+        </div>
       </header>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-        {/* Security Card */}
+      {/* Bento Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-4 grid-rows-auto md:grid-rows-2 gap-6">
+        
+        {/* Main Camera/Radar - Bento Piece (2x2) */}
         <div 
-          className={`bg-white rounded-[32px] p-8 shadow-2xl transition-all duration-500 transform ${
+          className={`md:col-span-2 md:row-span-2 glass-card rounded-[40px] p-8 flex flex-col justify-between group overflow-hidden relative ${
             cameraState.face_detected 
-              ? 'ring-4 ring-red-500 shadow-[0_0_50px_rgba(239,68,68,0.3)] scale-[1.02]' 
-              : 'hover:scale-[1.01]'
+              ? 'ring-2 ring-emerald-500/50 shadow-[0_0_50px_rgba(16,185,129,0.2)]' 
+              : ''
           }`}
         >
-          <div className="flex justify-between items-start mb-6">
-            <span className="text-5xl">🛡️</span>
-            <div className="flex items-center space-x-2">
-              {cameraState.face_detected ? (
-                <span className="bg-red-100 text-red-600 px-4 py-1 rounded-full text-xs font-bold uppercase tracking-widest animate-pulse">
-                  Authorized Presence
-                </span>
-              ) : (
-                <span className="bg-slate-100 text-slate-500 px-4 py-1 rounded-full text-xs font-bold uppercase tracking-widest">
-                  Scanning...
-                </span>
-              )}
-            </div>
+          <div className="absolute top-0 right-0 p-8 opacity-10 group-hover:opacity-20 transition-opacity">
+            {cameraState.face_detected ? <UserCheck size={200} /> : <Scan size={200} />}
           </div>
 
-          <h3 className="text-2xl font-bold text-slate-900 mb-2">Workstation Vision</h3>
-          <p className="text-slate-500 text-sm mb-6 uppercase tracking-tight">Zone: {cameraState.camera_zone}</p>
-          
-          <div className="space-y-4">
-            <div className={`p-4 rounded-2xl border ${
-              cameraState.face_detected ? 'bg-red-50 border-red-100' : 'bg-slate-50 border-slate-100'
-            }`}>
-              <div className="flex justify-between items-center">
-                <span className="text-slate-600 font-medium">Status</span>
-                <span className={`font-bold ${cameraState.face_detected ? 'text-red-600' : 'text-slate-400'}`}>
-                  {cameraState.face_detected ? 'DETECTION ACTIVE' : 'NO TARGET'}
-                </span>
+          <div className="z-10">
+            <div className="flex justify-between items-start mb-10">
+              <div className="p-4 bg-white/5 rounded-3xl border border-white/10">
+                <Shield className={cameraState.face_detected ? "text-emerald-400" : "text-slate-400"} size={32} />
+              </div>
+              <div className={`px-5 py-2 rounded-full text-xs font-black tracking-widest uppercase ${
+                cameraState.face_detected ? 'bg-emerald-500/20 text-emerald-400' : 'bg-white/5 text-slate-500'
+              }`}>
+                {cameraState.face_detected ? 'Authorized Presence' : 'Scanning Zone'}
               </div>
             </div>
             
-            {cameraState.face_detected && (
-              <p className="text-xs text-red-400 italic text-center">
-                Last detected at: {new Date().toLocaleTimeString()}
-              </p>
-            )}
+            <h2 className="text-4xl font-bold text-white mb-2">Workstation Vision</h2>
+            <p className="text-slate-400 text-lg">Active monitor for Main Lab Entry</p>
+          </div>
+
+          <div className="z-10 flex gap-4 mt-10">
+            <div className="flex-1 bg-white/5 border border-white/10 rounded-3xl p-6 backdrop-blur-md">
+              <span className="block text-slate-500 text-xs font-bold uppercase mb-2">Zone Status</span>
+              <span className={`text-xl font-bold ${cameraState.face_detected ? 'text-emerald-400' : 'text-slate-300'}`}>
+                {cameraState.face_detected ? 'OCCUPIED' : 'SECURE'}
+              </span>
+            </div>
+            <div className="flex-1 bg-white/5 border border-white/10 rounded-3xl p-6 backdrop-blur-md">
+              <span className="block text-slate-500 text-xs font-bold uppercase mb-2">Latency</span>
+              <span className="text-xl font-bold text-slate-300">12ms</span>
+            </div>
           </div>
         </div>
 
-        {/* Placeholder for other cards */}
-        <div className="bg-white/5 border border-white/10 rounded-[32px] p-8 flex items-center justify-center border-dashed">
-          <p className="text-white/20 font-medium">Add more sensors...</p>
+        {/* AI Assistant Bento (1x1) */}
+        <div className="glass-card rounded-[40px] p-8 bg-purple-900/10 border-purple-500/20 group hover:bg-purple-900/20 transition-all flex flex-col justify-between">
+          <div className="flex justify-between items-center mb-6">
+            <div className="p-3 bg-purple-500/20 rounded-2xl border border-purple-500/30">
+              <Cpu className="text-purple-400" size={24} />
+            </div>
+            <span className="text-purple-400 text-xs font-bold tracking-widest">AI CORE</span>
+          </div>
+          <div>
+            <h3 className="text-2xl font-bold text-white mb-2">Smart Assistant</h3>
+            <p className="text-slate-400 text-sm leading-relaxed">Neural control engine active and ready.</p>
+          </div>
+          <button className="mt-8 py-4 bg-purple-500 text-white rounded-2xl font-bold hover:bg-purple-600 transition-all shadow-lg shadow-purple-500/20">
+            Launch AI
+          </button>
         </div>
+
+        {/* Environment Card (1x1) */}
+        <div className="glass-card rounded-[40px] p-8 flex flex-col justify-between">
+          <div className="flex justify-between items-center mb-6">
+            <div className="p-3 bg-blue-500/20 rounded-2xl border border-blue-500/30">
+              <Thermometer className="text-blue-400" size={24} />
+            </div>
+            <div className="h-2 w-2 rounded-full bg-blue-400 animate-pulse"></div>
+          </div>
+          <div>
+            <div className="flex items-end gap-1 mb-2">
+              <span className="text-5xl font-black text-white">{temp}</span>
+              <span className="text-2xl font-bold text-blue-400 mb-1">°C</span>
+            </div>
+            <p className="text-slate-400 text-sm font-medium tracking-wide">Workstation Temp</p>
+          </div>
+          <div className="mt-6 h-1 w-full bg-white/5 rounded-full overflow-hidden">
+            <div className="h-full bg-blue-500 w-[65%] rounded-full shadow-[0_0_10px_rgba(59,130,246,0.5)]"></div>
+          </div>
+        </div>
+
+        {/* Relay Controls (2x1) */}
+        <div className="md:col-span-2 glass-card rounded-[40px] p-8">
+          <div className="flex justify-between items-center mb-8">
+            <div className="flex items-center gap-4">
+              <div className="p-3 bg-amber-500/20 rounded-2xl border border-amber-500/30">
+                <Lightbulb className={relayState ? "text-amber-400" : "text-slate-500"} size={24} />
+              </div>
+              <h3 className="text-2xl font-bold text-white">Power Control</h3>
+            </div>
+          </div>
+          
+          <div className="grid grid-cols-2 gap-4">
+            <button 
+              onClick={() => setRelayState(!relayState)}
+              className={`p-6 rounded-3xl border transition-all duration-500 text-left ${
+                relayState 
+                  ? 'bg-amber-500/20 border-amber-500/50 shadow-[0_0_30px_rgba(245,158,11,0.15)]' 
+                  : 'bg-white/5 border-white/10 hover:bg-white/10'
+              }`}
+            >
+              <span className={`block text-xs font-bold uppercase tracking-widest mb-2 ${relayState ? 'text-amber-400' : 'text-slate-500'}`}>
+                Main Lights
+              </span>
+              <span className={`text-xl font-bold ${relayState ? 'text-white' : 'text-slate-400'}`}>
+                {relayState ? 'SYSTEM ON' : 'SYSTEM OFF'}
+              </span>
+            </button>
+            
+            <button className="p-6 rounded-3xl bg-white/5 border border-white/10 hover:bg-white/10 transition-all text-left group">
+              <span className="block text-slate-500 text-xs font-bold uppercase tracking-widest mb-2">Exhaust Fan</span>
+              <span className="text-xl font-bold text-slate-400 group-hover:text-slate-300">OFFLINE</span>
+            </button>
+          </div>
+        </div>
+
       </div>
     </div>
   );
