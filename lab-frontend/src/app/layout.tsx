@@ -26,6 +26,7 @@ export default function RootLayout({
             <div className="flex space-x-8">
               <Link href="/" className="text-gray-300 hover:text-white transition-colors">Dashboard</Link>
               <Link href="/system" className="text-gray-300 hover:text-white transition-colors">System</Link>
+              <Link href="/ai" className="text-gray-300 hover:text-white transition-colors">AI Assistant</Link>
             </div>
           </div>
         </nav>
