@@ -13,7 +13,7 @@ import {
   Lightbulb, Thermometer, Wind, Zap, 
   ShieldCheck, ArrowRight, Power, HelpCircle,
   MoreVertical, Search, Zap as Flash, Monitor,
-  Droplets, Fan, Snowflake, Cpu, ChevronUp, ChevronDown
+  Droplets, Fan, Snowflake, Cpu, ChevronUp, ChevronDown, Bot
 } from 'lucide-react';
 
 const sparkData = [
