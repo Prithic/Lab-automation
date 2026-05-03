@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import mqtt from 'mqtt';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useRouter } from 'next/navigation';
 import { useTheme } from 'next-themes';
 import { 
@@ -33,7 +33,6 @@ const Dashboard = () => {
   const [mounted, setMounted] = useState(false);
   const [mqttClient, setMqttClient] = useState<mqtt.MqttClient | null>(null);
 
-  // Global Hardware States
   const [lights, setLights] = useState(Array(6).fill(false));
   const [fans, setFans] = useState(Array(4).fill(false));
   const [acs, setAcs] = useState(Array(2).fill(false));
@@ -43,7 +42,6 @@ const Dashboard = () => {
 
   useEffect(() => setMounted(true), []);
 
-  // MQTT Bridge
   useEffect(() => {
     const client = mqtt.connect('ws://localhost:9001');
     client.on('connect', () => {
@@ -87,17 +85,17 @@ const Dashboard = () => {
   };
 
   const DeviceToggle = ({ icon: Icon, label, isOn, onToggle, colorClass }: any) => (
-    <div className="flex items-center justify-between py-2 border-b border-slate-50 dark:border-white/5 last:border-0">
+    <div className="flex items-center justify-between py-2.5 border-b border-black/5 dark:border-white/5 last:border-0">
       <div className="flex items-center gap-3">
-        <div className={`p-2 rounded-lg ${isOn ? colorClass : 'bg-slate-50 dark:bg-white/5 text-slate-300 dark:text-white/20'}`}>
+        <div className={`p-2.5 rounded-xl transition-all ${isOn ? colorClass : 'bg-black/5 dark:bg-white/5 text-slate-400'}`}>
           <Icon size={16} className={isOn ? 'animate-pulse' : ''} />
         </div>
-        <span className="text-xs font-medium text-slate-600 dark:text-slate-300">{label}</span>
+        <span className="text-xs font-bold tracking-tight text-slate-700 dark:text-slate-200">{label}</span>
       </div>
       <div 
         onClick={onToggle}
-        className={`h-5 w-10 rounded-full relative cursor-pointer transition-colors duration-300 ${
-          isOn ? 'bg-blue-600' : 'bg-slate-200 dark:bg-slate-700'
+        className={`h-5 w-10 rounded-full relative cursor-pointer transition-all duration-500 ${
+          isOn ? 'bg-blue-600 shadow-[0_0_15px_rgba(37,99,235,0.4)]' : 'bg-slate-200 dark:bg-white/10'
         }`}
       >
         <motion.div animate={{ x: isOn ? 22 : 2 }} className="absolute top-1 h-3 w-3 bg-white rounded-full shadow-sm" />
@@ -108,13 +106,13 @@ const Dashboard = () => {
   if (!mounted) return null;
 
   return (
-    <div className="flex h-screen overflow-hidden font-sans bg-slate-50 dark:bg-[#1a242f] transition-colors duration-500">
+    <div className="flex h-screen overflow-hidden">
       
       {/* Sidebar */}
-      <aside className="w-16 bg-white dark:bg-slate-900 flex flex-col items-center py-4 border-r border-slate-200 dark:border-white/5 hidden md:flex transition-colors duration-500">
-        <div className="sidebar-icon mb-6"><Menu size={24} /></div>
-        <div className="space-y-4 flex-1">
-          <div className="sidebar-icon bg-slate-100 dark:bg-white/10 text-slate-900 dark:text-white"><Grid size={22} /></div>
+      <aside className="w-20 bg-white/60 dark:bg-black/20 backdrop-blur-3xl flex flex-col items-center py-8 border-r border-black/5 dark:border-white/5 hidden md:flex">
+        <div className="sidebar-icon mb-10 text-blue-600 dark:text-blue-400 bg-blue-500/10"><Menu size={24} /></div>
+        <div className="space-y-6 flex-1">
+          <div className="sidebar-icon !text-blue-600 dark:!text-blue-400 bg-blue-500/10"><Grid size={22} /></div>
           <div className="sidebar-icon" onClick={() => router.push('/ai')}><Bot size={22} /></div>
           <div className="sidebar-icon" onClick={() => router.push('/system')}><Monitor size={22} /></div>
           <div className="sidebar-icon" onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}>
@@ -122,72 +120,83 @@ const Dashboard = () => {
           </div>
           <div className="sidebar-icon"><Settings size={22} /></div>
         </div>
-        <div className="mt-auto flex flex-col items-center gap-4">
-          <div className="h-8 w-8 rounded-full bg-emerald-100 dark:bg-emerald-500/20 flex items-center justify-center text-emerald-600 dark:text-emerald-400 font-bold text-xs">P</div>
+        <div className="mt-auto">
+          <div className="h-10 w-10 rounded-2xl bg-gradient-to-br from-emerald-400 to-teal-500 flex items-center justify-center text-white font-black text-sm shadow-lg shadow-emerald-500/20">P</div>
         </div>
       </aside>
 
       {/* Main Area */}
       <main className="flex-1 flex flex-col overflow-hidden">
         
-        <nav className="h-14 bg-white/50 dark:bg-slate-800/40 backdrop-blur-md flex items-center px-6 gap-8 border-b border-slate-200 dark:border-white/5">
-          <div className="flex items-center gap-2 text-slate-900 dark:text-white">
-            <Home size={18} className="text-blue-500" />
-            <span className="text-xs font-black uppercase tracking-widest">IOT LAB CORE</span>
+        <nav className="h-16 bg-white/40 dark:bg-black/20 backdrop-blur-3xl flex items-center px-10 gap-10 border-b border-black/5 dark:border-white/5">
+          <div className="flex items-center gap-3">
+            <div className="h-8 w-8 bg-blue-600 rounded-xl flex items-center justify-center text-white shadow-lg shadow-blue-600/30">
+              <Cpu size={18} />
+            </div>
+            <span className="text-xs font-black uppercase tracking-[0.3em] text-slate-800 dark:text-white">LAB CORE</span>
           </div>
-          <div className="hidden md:flex gap-6">
-            <span className="text-slate-900 dark:text-white text-[10px] font-bold tracking-[0.2em] uppercase cursor-pointer border-b-2 border-blue-500 pb-4 mt-4">Dashboard</span>
-            <span className="text-slate-400 dark:text-white/40 text-[10px] font-bold tracking-[0.2em] uppercase cursor-pointer hover:text-blue-500 dark:hover:text-white transition-colors pb-4 mt-4">Automation</span>
+          <div className="hidden md:flex gap-8">
+            <span className="text-blue-600 dark:text-blue-400 text-[10px] font-black tracking-[0.2em] uppercase cursor-pointer border-b-2 border-blue-600 pb-5 mt-5">Dashboard</span>
+            <span className="text-slate-400 dark:text-white/30 text-[10px] font-black tracking-[0.2em] uppercase cursor-pointer hover:text-blue-600 dark:hover:text-white transition-colors pb-5 mt-5">Automation</span>
           </div>
-          <div className="ml-auto flex items-center gap-4">
-            <div className={`h-2 w-2 rounded-full ${mqttClient ? 'bg-emerald-500 animate-pulse' : 'bg-red-500'}`}></div>
-            <span className={`text-[10px] font-bold uppercase tracking-widest ${mqttClient ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-500'}`}>
-              {mqttClient ? 'Live' : 'Offline'}
-            </span>
+          <div className="ml-auto flex items-center gap-6">
+            <div className="flex items-center gap-3 bg-black/5 dark:bg-white/5 px-4 py-2 rounded-full border border-black/5 dark:border-white/5">
+              <div className={`h-2 w-2 rounded-full ${mqttClient ? 'bg-emerald-500 animate-pulse shadow-[0_0_10px_rgba(16,185,129,0.5)]' : 'bg-red-500'}`}></div>
+              <span className={`text-[10px] font-black uppercase tracking-widest ${mqttClient ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-500'}`}>
+                {mqttClient ? 'Live' : 'Offline'}
+              </span>
+            </div>
           </div>
         </nav>
 
-        <div className="flex-1 overflow-y-auto p-6 scrollbar-hide">
+        <div className="flex-1 overflow-y-auto p-10 scrollbar-hide">
           
-          <div className="flex justify-between items-center mb-8">
-            <div className="flex gap-4">
+          <div className="flex justify-between items-center mb-10">
+            <div className="flex gap-5">
               {users.map(user => (
-                <div key={user.name} className="flex items-center gap-2 bg-white dark:bg-white/5 p-1 pr-4 rounded-full border border-slate-200 dark:border-white/10 shadow-sm">
-                  <img src={user.img} alt={user.name} className="h-8 w-8 rounded-full border border-white/20" />
+                <div key={user.name} className="flex items-center gap-3 bg-white/60 dark:bg-white/5 p-1.5 pr-6 rounded-2xl border border-black/5 dark:border-white/10 shadow-sm hover:scale-105 transition-all cursor-pointer">
+                  <img src={user.img} alt={user.name} className="h-10 w-10 rounded-xl border-2 border-white/20 shadow-md" />
                   <div className="flex flex-col">
-                    <span className="text-[10px] font-bold text-slate-900 dark:text-white uppercase">{user.name}</span>
-                    <span className={`text-[8px] font-bold uppercase tracking-widest ${
-                      security.presenceDetected ? 'text-emerald-500 animate-pulse' : 'text-slate-400 dark:text-white/40'
+                    <span className="text-[11px] font-black text-slate-800 dark:text-white uppercase tracking-wider">{user.name}</span>
+                    <span className={`text-[9px] font-bold uppercase tracking-widest ${
+                      security.presenceDetected ? 'text-emerald-500 animate-pulse' : 'text-slate-400'
                     }`}>
-                      {security.presenceDetected ? 'PERSON DETECTED' : 'SCANNING...'}
+                      {security.presenceDetected ? 'DETECTED' : 'SCANNING'}
                     </span>
                   </div>
                 </div>
               ))}
             </div>
-            <div className="flex gap-3">
-              <div className="ha-card py-2 px-4 flex items-center gap-2">
-                <Thermometer size={14} className="text-blue-500" />
-                <span className="text-xs font-bold text-slate-900 dark:text-white">{envData.temperature.toFixed(1)}°C</span>
+            <div className="flex gap-4">
+              <div className="ha-card !py-3 !px-6 flex items-center gap-3">
+                <Thermometer size={16} className="text-blue-500" />
+                <span className="text-sm font-black text-slate-800 dark:text-white">{envData.temperature.toFixed(1)}°C</span>
               </div>
-              <div className="ha-card py-2 px-4 flex items-center gap-2">
-                <Flash size={14} className="text-amber-500" />
-                <span className="text-xs font-bold text-slate-900 dark:text-white">{envData.power.toFixed(2)}kW</span>
+              <div className="ha-card !py-3 !px-6 flex items-center gap-3">
+                <Flash size={16} className="text-amber-500" />
+                <span className="text-sm font-black text-slate-800 dark:text-white">{envData.power.toFixed(2)}kW</span>
               </div>
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-4 lg:grid-cols-6 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-4 lg:grid-cols-6 gap-8">
             
             {/* Lights */}
             <div className="ha-card col-span-2 row-span-2">
-              <div className="flex justify-between items-center mb-6">
-                <div className="flex items-center gap-2 text-slate-900 dark:text-white"><Lightbulb size={18} className="text-amber-400" /><span className="text-sm font-bold uppercase tracking-widest">Lab Lighting</span></div>
-                <span className="text-[10px] font-bold text-slate-400">{lights.filter(l => l).length}/6 ON</span>
+              <div className="flex justify-between items-center mb-8">
+                <div className="flex items-center gap-3 text-slate-900 dark:text-white">
+                  <div className="p-2 bg-amber-500/10 rounded-lg"><Lightbulb size={20} className="text-amber-500" /></div>
+                  <span className="text-sm font-black uppercase tracking-[0.2em]">Lab Lighting</span>
+                </div>
+                <div className="px-3 py-1 bg-black/5 dark:bg-white/5 rounded-full">
+                  <span className="text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest">
+                    {lights.filter(l => l).length}/6 ON
+                  </span>
+                </div>
               </div>
               <div className="space-y-1">
                 {lights.map((isOn, i) => (
-                  <DeviceToggle key={i} icon={Lightbulb} label={`Light Row ${i + 1}`} isOn={isOn} onToggle={() => toggleDevice('light', i)} colorClass="bg-amber-100 text-amber-600" />
+                  <DeviceToggle key={i} icon={Lightbulb} label={`Light Row ${i + 1}`} isOn={isOn} onToggle={() => toggleDevice('light', i)} colorClass="bg-amber-500/20 text-amber-500" />
                 ))}
               </div>
             </div>
@@ -195,16 +204,19 @@ const Dashboard = () => {
             {/* Climate */}
             <div className="ha-card col-span-2 flex flex-col justify-between">
               <div className="flex justify-between items-start">
-                <div className="flex items-center gap-2 text-slate-900 dark:text-white"><Snowflake size={18} className="text-blue-500" /><span className="text-sm font-bold uppercase tracking-widest">Climate Control</span></div>
+                <div className="flex items-center gap-3 text-slate-900 dark:text-white">
+                  <div className="p-2 bg-blue-500/10 rounded-lg"><Snowflake size={20} className="text-blue-500" /></div>
+                  <span className="text-sm font-black uppercase tracking-[0.2em]">Climate</span>
+                </div>
               </div>
-              <div className="mt-4 grid grid-cols-2 gap-4">
+              <div className="mt-6 grid grid-cols-2 gap-5">
                 {acs.map((isOn, i) => (
                   <motion.div key={i} whileTap={{ scale: 0.95 }} onClick={() => toggleDevice('ac', i)}
-                    className={`p-4 rounded-xl border flex flex-col gap-3 cursor-pointer transition-all duration-300 ${
-                      isOn ? 'bg-blue-600 border-blue-500 text-white shadow-lg' : 'bg-slate-50 dark:bg-white/5 border-slate-100 dark:border-white/5 text-slate-400'
+                    className={`p-5 rounded-2xl border flex flex-col gap-4 cursor-pointer transition-all duration-500 ${
+                      isOn ? 'bg-blue-600 border-blue-500 text-white shadow-2xl shadow-blue-600/40' : 'bg-black/5 dark:bg-white/5 border-transparent text-slate-400'
                     }`}
                   >
-                    <Power size={20} /><span className="text-xs font-black uppercase tracking-widest">AC UNIT {i + 1}</span>
+                    <Power size={22} /><span className="text-[11px] font-black uppercase tracking-widest">UNIT {i + 1}</span>
                   </motion.div>
                 ))}
               </div>
@@ -213,66 +225,75 @@ const Dashboard = () => {
             {/* Stats */}
             <div className="ha-card flex flex-col justify-between">
               <div className="flex justify-between text-slate-400">
-                <span className="text-[10px] font-bold uppercase tracking-widest">Humidity</span>
-                <Droplets size={14} className="text-blue-500" />
+                <span className="text-[10px] font-black uppercase tracking-widest">Humidity</span>
+                <Droplets size={16} className="text-blue-500" />
               </div>
-              <div className="my-2 text-3xl font-light text-slate-900 dark:text-white">{envData.humidity}<span className="text-xs opacity-50 ml-1">%</span></div>
-              <div className="h-10 w-full opacity-30">
-                <ResponsiveContainer width="100%" height="100%"><AreaChart data={sparkData}><Area type="monotone" dataKey="val" stroke="#3b82f6" fill="#dbeafe" strokeWidth={2} /></AreaChart></ResponsiveContainer>
+              <div className="my-3 text-4xl font-light text-slate-900 dark:text-white">{envData.humidity}<span className="text-lg opacity-30 ml-1">%</span></div>
+              <div className="h-12 w-full opacity-40">
+                <ResponsiveContainer width="100%" height="100%"><AreaChart data={sparkData}><Area type="monotone" dataKey="val" stroke="#3b82f6" fill="#3b82f6" fillOpacity={0.1} strokeWidth={2} /></AreaChart></ResponsiveContainer>
               </div>
             </div>
 
             <div className="ha-card flex flex-col justify-between">
               <div className="flex justify-between text-slate-400">
-                <span className="text-[10px] font-bold uppercase tracking-widest">Temp</span>
-                <Thermometer size={14} className="text-orange-500" />
+                <span className="text-[10px] font-black uppercase tracking-widest">Temp</span>
+                <Thermometer size={16} className="text-orange-500" />
               </div>
-              <div className="my-2 text-3xl font-light text-slate-900 dark:text-white">{envData.temperature.toFixed(1)} <span className="text-xs opacity-50">°C</span></div>
-              <div className="h-10 w-full opacity-30">
-                <ResponsiveContainer width="100%" height="100%"><AreaChart data={sparkData}><Area type="monotone" dataKey="val" stroke="#f97316" fill="#ffedd5" strokeWidth={2} /></AreaChart></ResponsiveContainer>
+              <div className="my-3 text-4xl font-light text-slate-900 dark:text-white">{envData.temperature.toFixed(1)} <span className="text-lg opacity-30">°C</span></div>
+              <div className="h-12 w-full opacity-40">
+                <ResponsiveContainer width="100%" height="100%"><AreaChart data={sparkData}><Area type="monotone" dataKey="val" stroke="#f97316" fill="#f97316" fillOpacity={0.1} strokeWidth={2} /></AreaChart></ResponsiveContainer>
               </div>
             </div>
 
             {/* Fans */}
             <div className="ha-card col-span-2 row-span-1">
-              <div className="flex justify-between items-center mb-6">
-                <div className="flex items-center gap-2 text-slate-900 dark:text-white"><Wind size={18} className="text-blue-600" /><span className="text-sm font-bold uppercase tracking-widest">Fans</span></div>
-                <span className="text-[10px] font-bold text-slate-400">{fans.filter(f => f).length}/4 ON</span>
+              <div className="flex justify-between items-center mb-8">
+                <div className="flex items-center gap-3 text-slate-900 dark:text-white">
+                  <div className="p-2 bg-emerald-500/10 rounded-lg"><Wind size={20} className="text-emerald-500" /></div>
+                  <span className="text-sm font-black uppercase tracking-[0.2em]">Ventilation</span>
+                </div>
+                <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{fans.filter(f => f).length}/4 ON</span>
               </div>
-              <div className="grid grid-cols-2 gap-x-6">
+              <div className="grid grid-cols-2 gap-x-8">
                 {fans.map((isOn, i) => (
-                  <DeviceToggle key={i} icon={Fan} label={`Fan ${i + 1}`} isOn={isOn} onToggle={() => toggleDevice('fan', i)} colorClass="bg-blue-100 text-blue-600" />
+                  <DeviceToggle key={i} icon={Fan} label={`Fan ${i + 1}`} isOn={isOn} onToggle={() => toggleDevice('fan', i)} colorClass="bg-emerald-500/20 text-emerald-500" />
                 ))}
               </div>
             </div>
 
             {/* Alarm */}
             <div className="ha-card col-span-2 row-span-1">
-              <div className="flex justify-between items-start mb-6">
+              <div className="flex justify-between items-start mb-8">
                 <div>
-                  <span className="text-sm font-bold block uppercase tracking-widest mb-1 text-slate-900 dark:text-white">Security Status</span>
-                  <span className={`text-[10px] font-bold uppercase tracking-widest ${security.presenceDetected ? 'text-emerald-500 animate-pulse' : 'text-slate-400'}`}>{security.presenceDetected ? 'PERSON DETECTED' : 'SCANNING...'}</span>
+                  <span className="text-sm font-black block uppercase tracking-[0.2em] mb-2 text-slate-900 dark:text-white">Security</span>
+                  <span className={`text-[10px] font-black uppercase tracking-[0.2em] ${security.presenceDetected ? 'text-emerald-500 animate-pulse' : 'text-slate-400'}`}>
+                    {security.presenceDetected ? '• PERSON DETECTED' : '• SCANNING AREA'}
+                  </span>
                 </div>
-                <div className={`h-10 w-10 rounded-full border flex items-center justify-center transition-colors ${security.presenceDetected ? 'bg-emerald-50 border-emerald-500 text-emerald-500' : 'bg-slate-50 dark:bg-white/5 border-slate-200 dark:border-white/10 text-slate-300'}`}><ShieldCheck size={24} /></div>
+                <div className={`h-12 w-12 rounded-2xl border flex items-center justify-center transition-all ${
+                  security.presenceDetected ? 'bg-emerald-500 border-emerald-500 text-white shadow-lg shadow-emerald-500/30' : 'bg-black/5 dark:bg-white/5 border-transparent text-slate-300'
+                }`}><ShieldCheck size={26} /></div>
               </div>
-              <div className="flex gap-3">
-                <button onClick={() => sendCommand('lab/security/control', { command: 'ARM' })} className="flex-1 py-2.5 px-3 bg-slate-900 dark:bg-white dark:text-slate-900 text-white rounded-lg text-[9px] font-bold uppercase tracking-[0.2em] hover:bg-red-600 transition-colors">ARM SYSTEM</button>
-                <button onClick={() => sendCommand('lab/security/control', { command: 'LOCK' })} className="flex-1 py-2.5 px-3 border border-slate-200 dark:border-white/20 rounded-lg text-[9px] font-bold uppercase tracking-[0.2em] text-slate-600 dark:text-slate-400 hover:bg-blue-50 dark:hover:bg-white/10 transition-colors">LOCK LAB</button>
+              <div className="flex gap-4">
+                <button onClick={() => sendCommand('lab/security/control', { command: 'ARM' })} className="flex-1 py-3 px-4 bg-slate-900 dark:bg-white dark:text-slate-900 text-white rounded-xl text-[10px] font-black uppercase tracking-[0.2em] hover:bg-red-600 transition-all shadow-lg">ARM SYSTEM</button>
+                <button onClick={() => sendCommand('lab/security/control', { command: 'LOCK' })} className="flex-1 py-3 px-4 border border-black/10 dark:border-white/10 rounded-xl text-[10px] font-black uppercase tracking-[0.2em] text-slate-600 dark:text-slate-400 hover:bg-blue-600 hover:text-white transition-all">LOCK LAB</button>
               </div>
             </div>
 
             {/* Consumption */}
             <div className="ha-card col-span-2 flex items-center justify-between">
-              <div className="flex items-center gap-4">
-                <div className="p-4 bg-amber-50 dark:bg-amber-500/10 rounded-2xl text-amber-500"><Flash size={28} /></div>
+              <div className="flex items-center gap-6">
+                <div className="p-5 bg-amber-500/10 rounded-2xl text-amber-500 shadow-inner"><Flash size={32} /></div>
                 <div>
-                  <span className="block text-[10px] font-black text-slate-300 dark:text-slate-500 uppercase tracking-[0.2em] mb-1">Consumption</span>
-                  <span className="text-2xl font-bold text-slate-700 dark:text-white italic">{envData.power.toFixed(2)} <span className="text-xs font-medium opacity-50 tracking-normal not-italic">kWh</span></span>
+                  <span className="block text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] mb-2">Live Consumption</span>
+                  <span className="text-3xl font-black text-slate-800 dark:text-white italic tracking-tighter">
+                    {envData.power.toFixed(2)} <span className="text-xs font-medium opacity-30 tracking-normal not-italic ml-1">kWh</span>
+                  </span>
                 </div>
               </div>
-              <div className="flex items-center gap-2 bg-emerald-50 dark:bg-emerald-500/10 px-4 py-2 rounded-full">
-                <ArrowRight size={14} className="text-emerald-500" />
-                <span className="text-[9px] font-bold text-emerald-600 uppercase tracking-widest">Normal</span>
+              <div className="flex items-center gap-3 bg-emerald-500/10 px-5 py-2.5 rounded-2xl border border-emerald-500/20">
+                <div className="h-2 w-2 bg-emerald-500 rounded-full animate-ping"></div>
+                <span className="text-[10px] font-black text-emerald-600 dark:text-emerald-400 uppercase tracking-widest">Normal</span>
               </div>
             </div>
 
