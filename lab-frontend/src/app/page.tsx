@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import mqtt from 'mqtt';
 import { motion } from 'framer-motion';
 import { 
   LineChart, Line, ResponsiveContainer, AreaChart, Area
@@ -14,8 +15,8 @@ import {
   Droplets, Fan, Snowflake, Cpu
 } from 'lucide-react';
 
-// Mock Data
-const tempHistory = [
+// Mock Data for Sparklines (Placeholder for historical trends)
+const sparkData = [
   { val: 24 }, { val: 24.2 }, { val: 24.1 }, { val: 24.3 }, { val: 24.2 }
 ];
 
@@ -26,24 +27,73 @@ const users = [
 ];
 
 const Dashboard = () => {
+  // MQTT Client Reference
+  const [mqttClient, setMqttClient] = useState<mqtt.MqttClient | null>(null);
+
+  // Live Environment State
+  const [envData, setEnvData] = useState({ temperature: 24.2, humidity: 42 });
+
   // Device States
   const [lights, setLights] = useState(Array(6).fill(false));
   const [fans, setFans] = useState(Array(4).fill(false));
   const [acs, setAcs] = useState(Array(2).fill(false));
 
+  // MQTT Connection Logic
+  useEffect(() => {
+    const client = mqtt.connect('ws://localhost:9001');
+
+    client.on('connect', () => {
+      console.log('Connected to Mosquitto Broker');
+      client.subscribe('lab/environment/data');
+      setMqttClient(client);
+    });
+
+    client.on('message', (topic, message) => {
+      if (topic === 'lab/environment/data') {
+        try {
+          const data = JSON.parse(message.toString());
+          setEnvData(prev => ({
+            temperature: data.temperature ?? prev.temperature,
+            humidity: data.humidity ?? prev.humidity
+          }));
+        } catch (e) {
+          console.error("Failed to parse environment data", e);
+        }
+      }
+    });
+
+    return () => {
+      client.end();
+    };
+  }, []);
+
   const toggleDevice = (type: 'light' | 'fan' | 'ac', index: number) => {
+    let newState = false;
+    let topic = "";
+
     if (type === 'light') {
       const newLights = [...lights];
       newLights[index] = !newLights[index];
+      newState = newLights[index];
       setLights(newLights);
+      // Wiring Light Row 1 to lab/relay/light1
+      if (index === 0) topic = "lab/relay/light1";
     } else if (type === 'fan') {
       const newFans = [...fans];
       newFans[index] = !newFans[index];
+      newState = newFans[index];
       setFans(newFans);
     } else if (type === 'ac') {
       const newAcs = [...acs];
       newAcs[index] = !newAcs[index];
+      newState = newAcs[index];
       setAcs(newAcs);
+    }
+
+    // Publish command if topic is set
+    if (topic && mqttClient) {
+      mqttClient.publish(topic, newState ? "ON" : "OFF");
+      console.log(`Published ${newState ? "ON" : "OFF"} to ${topic}`);
     }
   };
 
@@ -107,8 +157,10 @@ const Dashboard = () => {
             <span className="text-white/40 text-[10px] font-bold tracking-[0.2em] uppercase cursor-pointer hover:text-white transition-colors pb-4 mt-4">Vision</span>
           </div>
           <div className="ml-auto flex items-center gap-4">
-            <div className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse"></div>
-            <span className="text-[10px] font-bold text-emerald-400 uppercase tracking-widest">Live</span>
+            <div className={`h-2 w-2 rounded-full ${mqttClient ? 'bg-emerald-500 animate-pulse' : 'bg-red-500'}`}></div>
+            <span className={`text-[10px] font-bold uppercase tracking-widest ${mqttClient ? 'text-emerald-400' : 'text-red-400'}`}>
+              {mqttClient ? 'Live' : 'Offline'}
+            </span>
           </div>
         </nav>
 
@@ -131,7 +183,7 @@ const Dashboard = () => {
             <div className="flex gap-3">
               <div className="ha-card py-2 px-4 bg-white/5 border-white/10 text-white flex items-center gap-2">
                 <Thermometer size={14} className="text-blue-400" />
-                <span className="text-xs font-bold">24.2°C</span>
+                <span className="text-xs font-bold">{envData.temperature.toFixed(1)}°C</span>
               </div>
               <div className="ha-card py-2 px-4 bg-white/5 border-white/10 text-white flex items-center gap-2">
                 <Flash size={14} className="text-amber-400" />
@@ -198,11 +250,11 @@ const Dashboard = () => {
                 <Droplets size={14} className="text-blue-400" />
               </div>
               <div className="my-2">
-                <span className="text-3xl font-light">42 <span className="text-xs opacity-50">%</span></span>
+                <span className="text-3xl font-light">{envData.humidity}<span className="text-xs opacity-50 ml-1">%</span></span>
               </div>
               <div className="h-10 w-full">
                 <ResponsiveContainer width="100%" height="100%">
-                  <AreaChart data={tempHistory}>
+                  <AreaChart data={sparkData}>
                     <Area type="monotone" dataKey="val" stroke="#3b82f6" fill="#dbeafe" strokeWidth={2} />
                   </AreaChart>
                 </ResponsiveContainer>
@@ -214,10 +266,10 @@ const Dashboard = () => {
                 <span className="text-[10px] font-bold uppercase tracking-widest">Temperature</span>
                 <Thermometer size={14} className="text-orange-400" />
               </div>
-              <div className="my-2 text-3xl font-light">24.2 <span className="text-xs opacity-50">°C</span></div>
+              <div className="my-2 text-3xl font-light">{envData.temperature.toFixed(1)} <span className="text-xs opacity-50">°C</span></div>
               <div className="h-10 w-full">
                 <ResponsiveContainer width="100%" height="100%">
-                  <AreaChart data={tempHistory}>
+                  <AreaChart data={sparkData}>
                     <Area type="monotone" dataKey="val" stroke="#f97316" fill="#ffedd5" strokeWidth={2} />
                   </AreaChart>
                 </ResponsiveContainer>
