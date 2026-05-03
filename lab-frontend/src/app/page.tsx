@@ -11,7 +11,8 @@ import {
   Grid, Bell, User as UserIcon, Lock, Unlock,
   Lightbulb, Thermometer, Wind, Zap, 
   ShieldCheck, ArrowRight, Power, HelpCircle,
-  MoreVertical, Search, Zap as Flash, Monitor
+  MoreVertical, Search, Zap as Flash, Monitor,
+  Droplets
 } from 'lucide-react';
 
 // Mock Data
