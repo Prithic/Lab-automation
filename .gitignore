@@ -1,20 +1,24 @@
-# Python
-venv/
-__pycache__/
-*.pyc
-lab_data.db
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
 
-# Node.js
-node_modules/
-.next/
-out/
-build/
-.env*
+node_modules
+dist
+dist-ssr
+*.local
 
-# OS
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
 .DS_Store
-Thumbs.db
-
-# Docker
-mosquitto/data/
-mosquitto/log/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
