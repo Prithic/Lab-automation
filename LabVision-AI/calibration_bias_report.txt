@@ -1,0 +1,13 @@
+LABVISION-AI CALIBRATION BIAS REPORT
+====================================
+frame_00000.txt: User Found 21, AI Found 17 (Diff: 4)
+frame_00010.txt: User Found 23, AI Found 17 (Diff: 6)
+frame_00050.txt: User Found 21, AI Found 19 (Diff: 2)
+frame_00100.txt: User Found 23, AI Found 20 (Diff: 3)
+frame_00500.txt: User Found 21, AI Found 18 (Diff: 3)
+
+FINAL ANALYTICS:
+Sensitivity Gap: 1.20x
+Average Missed People per Frame: 3.6
+
+RECOMMENDATION: OPTIMAL: Auto-labeler is close to user standard. Fine-tuning to 0.25 threshold.

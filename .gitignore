@@ -21,4 +21,31 @@ dist-ssr
 *.ntvs*
 *.njsproj
 *.sln
-*.sw?
+# AI & Dataset
+LabVision-AI/dataset/
+LabVision-AI/extracted_frames/
+LabVision-AI/runs/
+LabVision-AI/audit_results/
+LabVision-AI/audit_samples/
+LabVision-AI/auto_labeled_labels/
+LabVision-AI/labeled_samples/
+LabVision-AI/manual_calibration/
+LabVision-AI/raw_videos/
+extracted_frames/
+runs/
+runs_backup/
+dataset_raw/
+
+# Large Files
+*.zip
+*.mp4
+*.hevc
+*.jpg
+*.png
+*.jpeg
+
+# Models (Keep final weights if desired, ignore others)
+# !LabVision-AI/yolov8s_final.pt 
+*.pt
+!yolov8s_final.pt
+!LabVision-AI/yolov8s_final.pt
