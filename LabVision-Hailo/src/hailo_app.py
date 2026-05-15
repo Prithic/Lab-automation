@@ -4,7 +4,7 @@ import queue
 import time
 import logging
 import os
-from fusion_engine import FusionEngine
+from occupancy_engine import OccupancyEngine
 from mqtt_manager import MQTTManager
 
 import numpy as np
@@ -28,12 +28,12 @@ class HailoApp:
         self.running = True
         
         # Modules
-        self.fusion = FusionEngine()
         self.mqtt = MQTTManager(broker=mqtt_broker)
+        self.engine = OccupancyEngine(self.mqtt.client)
         
-        # Setup MQTT Callbacks
-        self.mqtt.on_pir_update = self.fusion.update_sensor
-        self.mqtt.on_mmwave_update = self.fusion.update_sensor
+        # Setup MQTT Callbacks for external sensors
+        self.mqtt.on_pir_update = lambda v: self.engine.update(self.engine.stable_count + (1 if v else 0))
+        self.mqtt.on_mmwave_update = lambda v: self.engine.update(self.engine.stable_count + (1 if v else 0))
         
     def _capture_thread(self):
         """GStreamer-based RTSP Capture with HW Decoding"""
@@ -105,9 +105,8 @@ class HailoApp:
                         
                         # --- POST-PROCESSING ---
                         # (This is where you parse YOLO boxes)
-                        person_detected = self._parse_yolo_results(infer_results)
-                        
-                        self.fusion.update_sensor("ai", person_detected)
+                        person_count = self._parse_yolo_results(infer_results)
+                        self.engine.update(person_count)
                     except queue.Empty:
                         continue
 
@@ -142,35 +141,38 @@ class HailoApp:
         scores = predictions[:, 4]
         mask = scores > conf_threshold
         
-        if not np.any(mask):
-            return False
-            
-        # We only care if AT LEAST ONE person is detected with high confidence
-        # In a lab setting, even one detection is enough to trigger occupancy
-        # For more precision, you could add NMS here, but for binary occupancy,
-        # checking if any score > threshold is often sufficient and faster.
+        person_count = int(np.sum(mask))
+        if person_count > 0:
+            logger.debug(f"Detected {person_count} people with max score: {np.max(scores)}")
         
-        person_detected = True
-        logger.debug(f"Detected person with max score: {np.max(scores)}")
-        
-        return person_detected
+        return person_count
 
     def _logic_thread(self):
         """Occupancy Computation and MQTT Publishing"""
         logger.info("Starting Logic Thread")
         self.mqtt.connect()
         
+        MQTT_TOPIC_COUNT = "lab/vision/people_count"
+        last_publish_time = 0
+        PUBLISH_INTERVAL = 1
+
         while self.running:
-            # 1. Update Fusion Engine
-            state_changed = self.fusion.compute_final_state()
+            now = time.time()
             
-            # 2. Publish ONLY on change
-            if state_changed:
-                state = self.fusion.get_state_json()
-                self.mqtt.publish_state("lab/lab101/zoneA/occupancy/state", state)
+            # 1. Publish Telemetry to Home Assistant (Every 1s)
+            if (now - last_publish_time) >= PUBLISH_INTERVAL:
+                payload = {
+                    "count": self.engine.stable_count,
+                    "raw_count": self.engine.stable_count, # Mocked as stable for Pi
+                    "tier": self.engine.current_tier,
+                    "status": "online"
+                }
+                self.mqtt.client.publish(MQTT_TOPIC_COUNT, json.dumps(payload), qos=1, retain=True)
+                self.mqtt.client.publish(f"{MQTT_TOPIC_COUNT}/state", str(self.engine.stable_count), qos=1, retain=True)
+                last_publish_time = now
             
-            # 3. Heartbeat every 30s
-            if int(time.time()) % 30 == 0:
+            # 2. Heartbeat every 60s
+            if int(now) % 60 == 0:
                 self.mqtt.publish_heartbeat()
                 
             time.sleep(0.5)

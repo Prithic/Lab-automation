@@ -2,7 +2,7 @@ import paho.mqtt.client as mqtt
 import json
 
 # --- CONFIG ---
-MQTT_BROKER = "127.0.0.1" # Your Pi/Broker IP
+MQTT_BROKER = "hari.local" # Using mDNS for stable connection
 MQTT_TOPIC = "lab/#"
 
 def on_connect(client, userdata, flags, rc):

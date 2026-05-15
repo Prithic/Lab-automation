@@ -45,7 +45,7 @@ dataset_raw/
 *.jpeg
 
 # Models (Keep final weights if desired, ignore others)
-# !LabVision-AI/yolov8s_final.pt 
 *.pt
 !yolov8s_final.pt
 !LabVision-AI/yolov8s_final.pt
+!*.hef
