@@ -2,6 +2,8 @@ import paho.mqtt.client as mqtt
 import json
 import time
 import logging
+import psutil
+import os
 
 class MQTTManager:
     """
@@ -62,9 +64,18 @@ class MQTTManager:
 
     def publish_heartbeat(self):
         """Publishes system health status"""
+        try:
+            # Get uptime from /proc/uptime (Linux specific)
+            with open('/proc/uptime', 'r') as f:
+                uptime_seconds = float(f.readline().split()[0])
+        except:
+            uptime_seconds = 0
+
         heartbeat = {
             "status": "online",
-            "uptime": time.clock_gettime(time.CLOCK_BOOTTIME),
-            "load": 0.5 # Placeholder for system load
+            "uptime_seconds": uptime_seconds,
+            "cpu_load_percent": psutil.cpu_percent(),
+            "memory_usage_percent": psutil.virtual_memory().percent,
+            "timestamp": time.time()
         }
         self.client.publish("lab/lab101/system/heartbeat", json.dumps(heartbeat))

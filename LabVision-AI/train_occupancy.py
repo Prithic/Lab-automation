@@ -14,11 +14,11 @@ def train_model():
     # We use a smaller learning rate and more epochs to bake in the 'empty lab' samples
     results = model.train(
         data='data.yaml',
-        epochs=30,
-        imgsz=640,
-        batch=16,
+        epochs=100,
+        imgsz=1280,
+        batch=8, # Reduced batch size to fit 1280 into VRAM
         device=device,
-        name='lab_occupancy_v1',
+        name='lab_occupancy_v2_ultra',
         project='runs/train',
         exist_ok=True,
         # False positive suppression settings

@@ -62,8 +62,8 @@ def run_live_occupancy(source=0, weights='yolov8s_final.pt', device_override=Non
         # 3. Processing
         display_frame = smart_scale(frame)
         
-        # Inference (Increased threshold to 0.50 to avoid false positives)
-        results = model(display_frame, classes=[0], conf=0.50, device=device, verbose=False)
+        # Inference (Optimized: lowered conf to 0.35 and increased imgsz for better detection)
+        results = model(display_frame, classes=[0], conf=0.35, imgsz=1280, device=device, verbose=False)
         count = len(results[0].boxes)
         
         # 4. Draw Results
@@ -74,6 +74,7 @@ def run_live_occupancy(source=0, weights='yolov8s_final.pt', device_override=Non
                     cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
         
         # 5. Display
+        cv2.namedWindow("LabVision-AI Real-Time Monitor", cv2.WINDOW_NORMAL)
         cv2.imshow("LabVision-AI Real-Time Monitor", annotated_frame)
         
         key = cv2.waitKey(1) & 0xFF

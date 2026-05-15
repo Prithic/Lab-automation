@@ -3,12 +3,14 @@ import threading
 import queue
 import time
 import logging
+import os
 from fusion_engine import FusionEngine
 from mqtt_manager import MQTTManager
 
+import numpy as np
 # Import Hailo only if available
 try:
-    from hailo_platform import HEF, Device, VDevice, InferVStreams, ConfigureVStreams, InputVStreamParams, OutputVStreamParams, FormatType
+    from hailo_platform import HEF, Device, VDevice, InferVStreams, ConfigureVStreams, InputVStreamParams, OutputVStreamParams, FormatType # type: ignore
     HAILO_AVAILABLE = True
 except ImportError:
     HAILO_AVAILABLE = False
@@ -121,10 +123,37 @@ class HailoApp:
                 continue
 
     def _parse_yolo_results(self, results):
-        """Parses Hailo output tensors into person detection (Stub)"""
-        # Implementation depends on your specific YOLO version export
-        # Return True if 'person' class confidence > 0.5
-        return True
+        """
+        Parses Hailo output tensors (1, 5, 8400) into person detection.
+        Format: [batch, 5, 8400] where 5 is [cx, cy, w, h, confidence]
+        """
+        if not results or len(results) == 0:
+            return False
+
+        # Hailo returns results as a list of numpy arrays from vstreams
+        # For our model, it's a single output tensor
+        output_tensor = results[0] # Shape (1, 5, 8400)
+        
+        # Squeeze batch and transpose to (8400, 5)
+        predictions = np.squeeze(output_tensor).T
+        
+        # Filter by confidence threshold (e.g., 0.5)
+        conf_threshold = 0.5
+        scores = predictions[:, 4]
+        mask = scores > conf_threshold
+        
+        if not np.any(mask):
+            return False
+            
+        # We only care if AT LEAST ONE person is detected with high confidence
+        # In a lab setting, even one detection is enough to trigger occupancy
+        # For more precision, you could add NMS here, but for binary occupancy,
+        # checking if any score > threshold is often sufficient and faster.
+        
+        person_detected = True
+        logger.debug(f"Detected person with max score: {np.max(scores)}")
+        
+        return person_detected
 
     def _logic_thread(self):
         """Occupancy Computation and MQTT Publishing"""
@@ -164,10 +193,24 @@ class HailoApp:
             self.running = False
 
 if __name__ == "__main__":
-    # Example usage
+    import argparse
+    parser = argparse.ArgumentParser(description="LabVision-Hailo Production Monitor")
+    parser.add_argument("--source", type=str, default="0", help="Webcam ID, RTSP URL, or Video File path")
+    parser.add_argument("--weights", type=str, default="models/yolov8s_lab.hef", help="Path to .hef model")
+    parser.add_argument("--mqtt", type=str, default="localhost", help="MQTT Broker IP")
+    args = parser.parse_args()
+
+    # Convert numeric source for local webcam
+    source = args.source
+    if source.isdigit():
+        source = int(source)
+    elif os.path.exists(source):
+        # Resolve absolute path for video files to avoid GStreamer confusion
+        source = os.path.abspath(source)
+
     app = HailoApp(
-        rtsp_url="rtsp://admin:pass@192.168.1.100:554/live",
-        model_path="models/yolov8s_lab.hef",
-        mqtt_broker="localhost"
+        rtsp_url=source,
+        model_path=args.weights,
+        mqtt_broker=args.mqtt
     )
     app.start()

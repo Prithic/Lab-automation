@@ -13,3 +13,4 @@ paho-mqtt>=1.6.1
 # Utils
 python-json-logger
 PyYAML
+psutil
